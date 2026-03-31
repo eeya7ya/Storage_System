@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { users, reconciliations } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, type SQL } from "drizzle-orm";
 import { ReconciliationForm } from "@/components/forms/reconciliation-form";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { MoneyDisplay } from "@/components/shared/money-display";
@@ -28,7 +28,7 @@ export default async function InventoryPage() {
   }
 
   // Fetch recent reconciliations
-  const whereConditions = [eq(reconciliations.isDeleted, false)];
+  const whereConditions: SQL[] = [eq(reconciliations.isDeleted, false)];
   if (session.user.role === "cashier") {
     whereConditions.push(eq(reconciliations.cashierId, parseInt(session.user.userId)));
   }
@@ -45,7 +45,7 @@ export default async function InventoryPage() {
     })
     .from(reconciliations)
     .leftJoin(users, eq(reconciliations.cashierId, users.id))
-    .where(and(...(whereConditions as Parameters<typeof and>)))
+    .where(and(...whereConditions))
     .orderBy(desc(reconciliations.shiftDate))
     .limit(10);
 
