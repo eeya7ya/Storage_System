@@ -1,9 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { db } from "@/lib/db";
-import { users } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
 import { loginSchema } from "@/lib/validators";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -16,6 +13,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
+
+        // Lazy-import db so Server Components that call auth() to read
+        // session tokens never trigger Pool/WebSocket initialization.
+        const { db } = await import("@/lib/db");
+        const { users } = await import("@/db/schema");
+        const { eq, and } = await import("drizzle-orm");
 
         const result = await db
           .select()
